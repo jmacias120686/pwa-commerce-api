@@ -67,7 +67,7 @@ app.use("/api/reports", reportRoutes)
 app.use(notFound)
 app.use(errorHandler)
 
-app.listen(PORT, () => {
-  console.log(`[Backend] Servidor corriendo en http://localhost:${PORT}`)
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`[Backend] Servidor corriendo en puerto: ${PORT}`)
   console.log(`[Backend] Ambiente: ${process.env.NODE_ENV || "development"}`)
 })
