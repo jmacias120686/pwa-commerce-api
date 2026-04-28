@@ -25,6 +25,7 @@ const defaultAllowedOrigins = [
   "http://127.0.0.1:5173",
   "http://127.0.0.1:4173",
   "http://192.168.18.27:5173",
+  "https://pwa-commerce-cli.vercel.app",
 ]
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim()).filter(Boolean)
