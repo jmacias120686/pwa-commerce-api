@@ -1,0 +1,151 @@
+// Prisma Schema para PWA Commerce
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelo de Usuarios con roles
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(CASHIER)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  sales     Sale[]
+  
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  CASHIER
+}
+
+// Modelo de Categorías
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  products    Product[]
+  
+  @@map("categories")
+}
+
+// Modelo de Productos
+model Product {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  price       Float
+  stock       Int      @default(0)
+  minStock    Int      @default(5)
+  imageUrl    String?
+  active      Boolean  @default(true)
+  categoryId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  saleItems   SaleItem[]
+  
+  @@map("products")
+}
+
+// Modelo de Clientes
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  sales     Sale[]
+  
+  @@map("customers")
+}
+
+// Modelo de Ventas
+model Sale {
+  id          String      @id @default(uuid())
+  saleNumber  String      @unique
+  total       Float
+  subtotal    Float
+  tax         Float       @default(0)
+  discount    Float       @default(0)
+  paymentMethod PaymentMethod @default(CASH)
+  status      SaleStatus  @default(COMPLETED)
+  notes       String?
+  
+  userId      String
+  customerId  String?
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // Sync fields para offline
+  syncedAt    DateTime?
+  localId     String?     // ID temporal cuando se crea offline
+  
+  user        User        @relation(fields: [userId], references: [id])
+  customer    Customer?   @relation(fields: [customerId], references: [id])
+  items       SaleItem[]
+  
+  @@map("sales")
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+  OTHER
+}
+
+enum SaleStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+// Modelo de Items de Venta
+model SaleItem {
+  id        String   @id @default(uuid())
+  quantity  Int
+  price     Float
+  subtotal  Float
+  
+  saleId    String
+  productId String
+  
+  sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
+  
+  @@map("sale_items")
+}
+
+// Modelo para tracking de sincronización
+model SyncLog {
+  id          String   @id @default(uuid())
+  entityType  String   // 'sale', 'product', 'customer'
+  entityId    String
+  action      String   // 'create', 'update', 'delete'
+  data        String   @db.Text // JSON stringified
+  userId      String?
+  synced      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  
+  @@map("sync_logs")
+}
